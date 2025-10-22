@@ -1,3 +1,5 @@
 strings.db
 HNGi13-One
 stringAudit_test.go
+.env
+out

@@ -53,14 +53,14 @@ type FilterAPIResponseItem struct {
 
 
 type StringRecord struct {
-	ID				string	`json:"id" gorm:"primaryKey"`
+	ID				string	`json:"id" gorm:"primaryKey;type:varchar(64)"`
 	Value			string	`json:"value"`
 	Length			int		`json:"length"`
 	IsPalindrome	bool	`json:"is_palindrome"`
 	UniqueCharaters	int		`json:"unique_characters"`
 	WordCount		int		`json:"word_count"`
 	Sha256Hash		string	`json:"sha256_hash"`
-	CharFreqMap		CharacterFreqMap `json:"character_frequency_map" gorm:"type:text"`
+	CharFreqMap		CharacterFreqMap `json:"character_frequency_map" gorm:"type:jsonb"`
 	CreatedAt		string	`json:"created_at"`
 }
 

@@ -6,18 +6,22 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 var db *gorm.DB
 
 func main() {
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		log.Fatal("DATABASE_URL environment variable is not set. Cannot connect to Postgres.")
+	}
 	var err error
 	
-	db, err = gorm.Open(sqlite.Open("strings.db"), &gorm.Config{})
+	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic("failed to connect to database")
+		panic("failed to connect to Postgres database")
 	}
 
 	db.AutoMigrate(&StringRecord{})
