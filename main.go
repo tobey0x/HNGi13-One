@@ -1,7 +1,9 @@
 package main
 
 import (
-	
+	"os"
+	"fmt"
+	"log"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
@@ -24,13 +26,22 @@ func main() {
 
 	r.POST("/strings", createStringHandler)
 	r.GET("/strings/:value", getStringHandler)
-	r.GET("strings", getStringsWithFilter)
+	r.GET("/strings", getStringsWithFilter)
 	r.GET("/strings/filter-by-natural-language", getNaturalLanguageFilter)
 
 	r.DELETE("/strings/:string_value", deleteStringRecord)
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
-	r.Run(":8080")
+	addr := fmt.Sprintf("0.0.0.0:%s", port)
+
+	fmt.Printf("Server running on %s\n", addr)
+	if err := r.Run(addr); err != nil {
+		log.Fatalf("Server failed to start: %v", err)
+	}
 
 }
 
