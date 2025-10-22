@@ -1,18 +1,43 @@
 package main
 
 import (
-	"log"
-	"strings"
 	"crypto/sha256"
+	"database/sql/driver"
 	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
 )
 
-func checkStringLength(text string) int {
-	return len(text)
+type StringProperties struct {
+	Length				int			`json:"length" gorm:"-"`
+	IsPalindrome		bool		`json:"is_palindrome" gorm:"-"`
+	UniqueCharacters	int			`json:"unique_characters" gorm:"-"`
+	WordCount			int			`json:"word_count" gorm:"-"`
+	Sha256Hash			string		`json:"sha256_hash" gorm:"-"`
+	CharFreqMap			CharacterFreqMap `json:"character_frequency_map" gorm:"type:text"`
 }
 
-func is_palindrome(rawStr string) bool {
-	str := strings.ToLower(rawStr)
+
+func analyzeString(s string) StringProperties {
+	uniqueCharacters := len(CharFreqMap(s))
+	wordCount := len(strings.Fields(s))
+
+
+
+	return StringProperties{
+		Length: len(s),
+		IsPalindrome: isPalindrome(s),
+		UniqueCharacters: uniqueCharacters,
+		WordCount: wordCount,
+		Sha256Hash: computeSHA256Hash(s),
+		CharFreqMap: CharFreqMap(s),
+	}
+}
+
+func isPalindrome(rawStr string) bool {
+	str := strings.ToLower(strings.ReplaceAll(rawStr, " ", ""))
 
 	start, end := 0, len(str)-1
 
@@ -23,23 +48,11 @@ func is_palindrome(rawStr string) bool {
 		start++
 		end--
 	}
-	log.Printf("%s is a palindrome", str)
 	return true
 }
 
-func uniqueCharaters(rawStr string) int {
-	str := strings.ToLower(rawStr)
-	charSet := make(map[rune]bool)
 
-	for _, char := range str {
-		charSet[char] = true
-	}
-
-	return len(charSet)	
-}
-
-
-func createSHA256Hash(rawStr string) string {
+func computeSHA256Hash(rawStr string) string {
 	hash := sha256.New()
 
 	hash.Write([]byte(rawStr))
@@ -50,12 +63,46 @@ func createSHA256Hash(rawStr string) string {
 	return hexHash
 }
 
-func charFreqMap(rawStr string) map[rune]int {
-	charCount := make(map[rune]int)
+func CharFreqMap(rawStr string) map[string]int {
+	charCount := make(map[string]int)
 
 	for _, char := range rawStr {
-		charCount[char]++
+		charCount[string(char)]++
 	}
 
 	return charCount
+}
+
+type CharacterFreqMap map[string]int
+
+func (c CharacterFreqMap) Value() (driver.Value, error) {
+	if c == nil {
+		return nil, nil
+	}
+
+	data, err := json.Marshal(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal CharacterFreqMap: %w", err)
+	}
+
+	return data, nil
+}
+
+func (c *CharacterFreqMap) Scan(value interface{}) error {
+	if value == nil {
+		*c = make(CharacterFreqMap)
+		return  nil
+	}
+
+	var data []byte
+	switch v := value.(type) {
+	case []byte:
+		data = v
+	case string:
+		data = []byte(v)
+	default:
+		return errors.New("unsupported type for scanning CharacterFreqMap")
+	}
+
+	return json.Unmarshal(data, c)
 }
